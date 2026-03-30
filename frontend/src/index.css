@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+@source "../index.html";
+@source "./**/*.{js,jsx}";
+
+/* ── VitaBridge Design System — DocTime-inspired ── */
+/* Primary: Teal   |  Accent: Orange  |  Grays: Neutral */
+
+@theme {
+  /* ─── Primary (Teal — DocTime green-teal) ─── */
+  --color-primary-50:  #eefbf7;
+  --color-primary-100: #d5f5ec;
+  --color-primary-200: #aeead9;
+  --color-primary-300: #79d9c2;
+  --color-primary-400: #41c1a5;
+  --color-primary-500: #22a98e;
+  --color-primary-600: #0e8c7f;
+  --color-primary-700: #0b6f63;
+  --color-primary-800: #0d5950;
+  --color-primary-900: #104943;
+  --color-primary-950: #042c29;
+
+  /* ─── Accent (Orange — warm CTA) ─── */
+  --color-accent-50:  #fff7ed;
+  --color-accent-100: #ffedd5;
+  --color-accent-200: #fed7aa;
+  --color-accent-300: #fdba74;
+  --color-accent-400: #fb923c;
+  --color-accent-500: #f97316;
+  --color-accent-600: #ea580c;
+  --color-accent-700: #c2410c;
+
+  /* ─── Gray (neutral) ─── */
+  --color-gray-50:  #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+
+  /* ─── Semantic ─── */
+  --color-success-500: #22c55e;
+  --color-danger-500:  #ef4444;
+  --color-warning-500: #f59e0b;
+  --color-info-500:    #3b82f6;
+}
+
+/* ── Base layer ── */
+@layer base {
+  html {
+    @apply scroll-smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply antialiased bg-white text-gray-800;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    touch-action: manipulation;
+  }
+
+  /* Touch targets */
+  button, a, [role="button"] {
+    @apply select-none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Text-size fix for mobile browsers */
+  * {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-primary-200 text-primary-900;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-1.5 h-1.5;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+  }
+}
+
+/* ── Utility layer ── */
+@layer utilities {
+  /* Glass-morphism */
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-lg;
+  }
+
+  /* Gradient text */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-primary-500;
+  }
+
+  /* Card hover lift */
+  .card-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+  .card-hover:hover {
+    @apply -translate-y-1 shadow-lg;
+  }
+
+  /* Touch-target minimum 44 × 44 */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Safe-area insets */
+  .safe-top    { padding-top:    env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-left   { padding-left:   env(safe-area-inset-left); }
+  .safe-right  { padding-right:  env(safe-area-inset-right); }
+
+  /* Animated gradient background */
+  .animated-gradient {
+    background-size: 200% 200%;
+    animation: gradientShift 8s ease infinite;
+  }
+
+  @keyframes gradientShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Fade-in animation */
+  .fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}

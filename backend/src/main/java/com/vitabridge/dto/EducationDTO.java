@@ -1,0 +1,14 @@
+package com.vitabridge.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class EducationDTO {
+    private String degree;
+    private String institute;
+    private String year;
+}
