@@ -2,6 +2,7 @@ package com.vitabridge.service;
 
 import com.vitabridge.dto.ScheduleDTO;
 import com.vitabridge.model.DoctorSchedule;
+import com.vitabridge.model.ScheduleConsultationMode;
 import com.vitabridge.repository.AppointmentRepository;
 import com.vitabridge.repository.DoctorScheduleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,9 @@ public class ScheduleService {
     public DoctorSchedule createSchedule(DoctorSchedule schedule) {
         if (schedule.getMaxPatients() == null) {
             schedule.setMaxPatients(50);
+        }
+        if (schedule.getConsultationMode() == null) {
+            schedule.setConsultationMode(ScheduleConsultationMode.BOTH);
         }
         // Always active on creation regardless of what the request body contained
         schedule.setIsActive(true);
@@ -78,6 +82,8 @@ public class ScheduleService {
         dto.setEndTime(schedule.getEndTime());
         dto.setMaxPatients(schedule.getMaxPatients());
         dto.setIsActive(schedule.getIsActive());
+        dto.setConsultationMode(
+            schedule.getConsultationMode() != null ? schedule.getConsultationMode().name() : ScheduleConsultationMode.BOTH.name());
         
         if (schedule.getDoctor() != null) {
             dto.setDoctorId(schedule.getDoctor().getId());

@@ -17,17 +17,15 @@ export default function PaymentCallback({ status }) {
   const [countdown, setCountdown] = useState(REDIRECT_DELAY);
   const isSuccessState = status === "success";
 
-  // Block browser back-button during success countdown
+  // Prevent returning to payment pages via browser back.
   useEffect(() => {
-    if (!isSuccessState) return;
-    // Push current URL so pressing Back just re-lands here
-    window.history.pushState(null, "", window.location.href);
+    window.history.replaceState(null, "", window.location.href);
     const handlePop = () => {
-      window.history.pushState(null, "", window.location.href);
+      navigate(isAuthenticated ? "/patient/appointments" : "/login", { replace: true });
     };
     window.addEventListener("popstate", handlePop);
     return () => window.removeEventListener("popstate", handlePop);
-  }, [isSuccessState]);
+  }, [isAuthenticated, navigate]);
 
   // Countdown timer
   useEffect(() => {

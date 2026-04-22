@@ -16,6 +16,7 @@ public class AssistantDTO {
     private String name;
     private String email;
     private String phoneNumber;
+    private String profileImageUrl;
     private String employeeId;
     private String bio;
     private String address;

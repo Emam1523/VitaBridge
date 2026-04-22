@@ -63,8 +63,12 @@ export default function DoctorPublicProfile() {
           <div className="p-6 sm:p-8">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
               {/* Avatar */}
-              <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-3xl font-bold">
-                {(doctor.name || "D")[0]}
+              <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 text-3xl font-bold">
+                {doctor.profileImageUrl || doctor.imageUrl ? (
+                  <img src={doctor.profileImageUrl || doctor.imageUrl} alt={doctor.name} className="h-full w-full object-cover" />
+                ) : (
+                  (doctor.name || "D")[0]
+                )}
               </div>
 
               {/* Info */}

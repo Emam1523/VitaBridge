@@ -15,13 +15,6 @@ export function toggleUserStatus(userId, token) {
   });
 }
 
-export function deleteUser(userId, token) {
-  return apiRequest(`/admin/users/${userId}`, {
-    method: "DELETE",
-    token,
-  });
-}
-
 // Doctor management
 export function createDoctor(data, token) {
   return apiRequest("/admin/doctors", { method: "POST", body: data, token });

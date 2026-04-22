@@ -1,0 +1,248 @@
+# Backend2 - Medical Report OCR & Analysis Service
+
+This is the Python FastAPI service that handles OCR (Optical Character Recognition) and analysis of medical reports.
+
+## Features
+
+- **OCR Processing**: Extract text from medical reports (PDF, images)
+- **Lab Value Parsing**: Automatically detect and parse lab test values (cholesterol, blood pressure, etc.)
+- **Visual Comparison**: Compare patient values against normal ranges
+- **Trend Analysis**: Track health metrics over time
+
+## Prerequisites
+
+1. **Python 3.10+** - [Download Python](https://www.python.org/downloads/)
+2. **Tesseract OCR** - [Download Tesseract](https://github.com/UB-Mannheim/tesseract/wiki)
+   - Windows: Download and install from the link above
+   - Default installation path: `C:\Program Files\Tesseract-OCR\tesseract.exe`
+3. **PostgreSQL** - Same database as main backend
+
+## Quick Start
+
+### 1. Install Tesseract OCR
+
+**Windows:**
+1. Download installer from: https://github.com/UB-Mannheim/tesseract/wiki
+2. Run the installer (tesseract-ocr-w64-setup-*.exe)
+3. Install to default location: `C:\Program Files\Tesseract-OCR`
+4. Verify installation: Open CMD and run `tesseract --version`
+
+### 2. Configure Environment
+
+The `.env` file is already configured. Verify these settings:
+
+```env
+TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe
+DATABASE_URL=postgresql+psycopg://emamhassan:hassan1523@localhost:5432/VitaBridge
+```
+
+### 3. Start the Service
+
+**Option A: Using the startup script (Recommended)**
+```bash
+cd backend2
+start.bat
+```
+
+**Option B: Manual start**
+```bash
+cd backend2
+
+# Create virtual environment (first time only)
+python -m venv .venv
+
+# Activate virtual environment
+.venv\Scripts\activate
+
+# Install dependencies
+pip install -e .
+
+# Run the server
+uvicorn app.main:app --host 0.0.0.0 --port 8011 --reload
+```
+
+The service will be available at: **http://localhost:8011**
+
+### 4. Verify Installation
+
+Open your browser and go to:
+- Health check: http://localhost:8011/health
+- API docs: http://localhost:8011/docs
+
+## Usage in VitaBridge
+
+1. Start backend2 service (port 8011)
+2. Start main backend (port 8080)
+3. Start frontend (port 5173)
+4. Login as a patient
+5. Go to **Profile → Health** tab
+6. Upload a medical report from your documents
+7. Click **Analyze report**
+8. View the extracted values and visual comparisons
+
+## Supported Medical Tests
+
+The OCR service can detect and parse:
+
+- **Cholesterol Panel**
+  - Total Cholesterol
+  - LDL (Low-Density Lipoprotein)
+  - HDL (High-Density Lipoprotein)
+  - Triglycerides
+
+- **Vital Signs**
+  - Blood Pressure (Systolic/Diastolic)
+  - Heart Rate / Pulse
+  - Oxygen Saturation (SpO2)
+
+## Supported File Formats
+
+- **Images**: PNG, JPG, JPEG, BMP, TIFF, WebP
+- **Documents**: PDF
+
+## Troubleshooting
+
+### Error: "Analysis service is not reachable"
+
+**Solution:**
+1. Make sure backend2 is running on port 8011
+2. Run: `cd backend2 && start.bat`
+3. Check if you see "Uvicorn running on http://0.0.0.0:8011"
+
+### Error: "Tesseract OCR is not installed"
+
+**Solution:**
+1. Install Tesseract from: https://github.com/UB-Mannheim/tesseract/wiki
+2. Update `TESSERACT_CMD` in `backend2/.env` with the correct path
+3. Restart backend2 service
+
+### Error: "No test values detected"
+
+**Possible causes:**
+1. The report image is too blurry or low quality
+2. The report format is not recognized
+3. The report doesn't contain supported test types
+
+**Solutions:**
+- Upload a clearer, higher resolution image
+- Try a different report format
+- Ensure the report contains lab test values (not just text)
+
+### Port 8011 already in use
+
+**Solution:**
+1. Find and stop the process using port 8011
+2. Or change the port in `start.bat` and `frontend/.env`:
+   ```
+   VITE_BACKEND2_API_URL=http://localhost:8012/api/v1
+   ```
+
+### Database connection error
+
+**Solution:**
+1. Verify PostgreSQL is running
+2. Check `DATABASE_URL` in `backend2/.env` matches your database credentials
+3. Ensure the VitaBridge database exists
+
+## API Endpoints
+
+### Health Check
+```
+GET /health
+```
+
+### Upload and Analyze Report
+```
+POST /api/v1/patients/{patient_id}/reports/upload
+Content-Type: multipart/form-data
+
+Body:
+- file: (binary)
+- reported_at: (optional datetime)
+```
+
+### Get Patient Trends
+```
+GET /api/v1/patients/{patient_id}/trends
+Query params:
+- metric: (optional) MetricCode
+- from_date: (optional) datetime
+- to_date: (optional) datetime
+```
+
+### Add Manual Measurement
+```
+POST /api/v1/patients/{patient_id}/measurements/manual
+Body: {
+  "metric_code": "total_cholesterol",
+  "value": 180.5,
+  "measured_at": "2024-01-15T10:30:00Z",
+  "unit": "mg/dL"
+}
+```
+
+## Development
+
+### Run Tests
+```bash
+pytest
+```
+
+### Database Migrations
+```bash
+# Create a new migration
+alembic revision --autogenerate -m "description"
+
+# Apply migrations
+alembic upgrade head
+```
+
+### View API Documentation
+Once the server is running, visit:
+- Swagger UI: http://localhost:8011/docs
+- ReDoc: http://localhost:8011/redoc
+
+## Architecture
+
+```
+backend2/
+├── app/
+│   ├── api/v1/          # API routes
+│   ├── core/            # Settings & config
+│   ├── db/              # Database setup
+│   ├── models/          # SQLAlchemy models
+│   ├── schemas/         # Pydantic schemas
+│   ├── services/        # Business logic
+│   │   ├── ocr_service.py      # Tesseract OCR
+│   │   ├── parser_service.py   # Lab value parsing
+│   │   ├── ingestion_service.py # Report processing
+│   │   └── trend_service.py    # Trend analysis
+│   └── main.py          # FastAPI app
+├── alembic/             # Database migrations
+├── .env                 # Environment variables
+├── start.bat            # Startup script
+└── pyproject.toml       # Dependencies
+```
+
+## Dependencies
+
+Key Python packages:
+- **FastAPI**: Web framework
+- **Uvicorn**: ASGI server
+- **SQLAlchemy**: ORM
+- **Pytesseract**: OCR wrapper
+- **Pillow**: Image processing
+- **PyPDF**: PDF text extraction
+- **Pydantic**: Data validation
+
+## Support
+
+For issues or questions:
+- Check the main README.md
+- Review the troubleshooting section above
+- Check backend2 logs for detailed error messages
+- Ensure all prerequisites are installed correctly
+
+## License
+
+Part of the VitaBridge project - MIT License

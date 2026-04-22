@@ -42,7 +42,7 @@ export default function PatientDashboard() {
       setProcessingId(appointmentId);
       const data = await initAamarPayPayment(appointmentId, token);
       if (data && data.paymentUrl) {
-        window.location.href = data.paymentUrl;
+        window.location.replace(data.paymentUrl);
       } else {
         setPayError("Could not initialize payment. Please try again.");
         setProcessingId(null);
@@ -55,6 +55,12 @@ export default function PatientDashboard() {
 
   const upcoming = appointments.filter(a => a.status === "CONFIRMED" || a.status === "PENDING").length;
   const completed = appointments.filter(a => a.status === "COMPLETED").length;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayActiveAppointments = appointments.filter(
+    (a) =>
+      (a.status === "PENDING" || a.status === "CONFIRMED") &&
+      a.appointmentDate === todayStr,
+  );
 
   const firstName = user?.name?.split(" ")[0] || "Patient";
 
@@ -118,7 +124,7 @@ export default function PatientDashboard() {
       {/* Active Appointments (not completed) */}
       <div className="mt-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-gray-900">Active Appointments</h3>
+          <h3 className="text-lg font-bold text-gray-900">Today's Activity</h3>
           <Link to="/patient/appointments" className="text-sm font-medium text-primary-600 hover:text-primary-700 transition">
             View all &rarr;
           </Link>
@@ -128,23 +134,25 @@ export default function PatientDashboard() {
           <div className="mt-8 flex justify-center">
             <svg className="h-8 w-8 animate-spin text-primary-400" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
           </div>
-        ) : appointments.filter(a => a.status === "PENDING" || a.status === "CONFIRMED").length === 0 ? (
+        ) : todayActiveAppointments.length === 0 ? (
           <div className="mt-8 text-center">
-            <p className="text-gray-400">No active appointments.</p>
+            <p className="text-gray-400">No active appointments for today.</p>
             <Link to="/patient/doctors" className="mt-3 inline-block rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-primary-500/25 hover:shadow-md">
               Book an appointment
             </Link>
           </div>
         ) : (
           <div className="mt-4 space-y-3">
-            {appointments
-              .filter(a => a.status === "PENDING" || a.status === "CONFIRMED")
-              .map((apt) => (
+            {todayActiveAppointments.map((apt) => (
                 <div key={apt.id} className="group flex flex-col sm:flex-row sm:items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:shadow-md hover:border-primary-200">
                   {/* Doctor */}
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-500 text-sm font-bold text-white shadow-lg shadow-primary-500/20">
-                      {(apt.doctorName || "D")[0]}
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary-500 to-primary-500 text-sm font-bold text-white shadow-lg shadow-primary-500/20">
+                      {apt.doctorProfileImageUrl ? (
+                        <img src={apt.doctorProfileImageUrl} alt={apt.doctorName} className="h-full w-full object-cover" />
+                      ) : (
+                        (apt.doctorName || "D")[0]
+                      )}
                     </div>
                     <div className="min-w-0">
                       <h4 className="font-semibold text-gray-900 truncate">{apt.doctorName}</h4>
@@ -175,12 +183,6 @@ export default function PatientDashboard() {
 
                   {/* Actions */}
                   <div className="flex gap-2 shrink-0">
-                    {apt.status === "CONFIRMED" && (
-                      <Link to={`/patient/consultation/${apt.id}`}
-                        className="rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-primary-500/20 transition hover:brightness-110">
-                        🎥 Join Consultation
-                      </Link>
-                    )}
                     {apt.status === "PENDING" && apt.paymentStatus !== "COMPLETED" && (
                       <button onClick={() => handlePayment(apt.id)} disabled={processingId === apt.id}
                         className="rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 disabled:opacity-50">
@@ -192,7 +194,7 @@ export default function PatientDashboard() {
                     )}
                   </div>
                 </div>
-              ))}
+            ))}
           </div>
         )}
       </div>

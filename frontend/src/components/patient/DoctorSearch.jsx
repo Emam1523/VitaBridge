@@ -106,8 +106,12 @@ export default function DoctorSearch() {
             {filtered.map(doc => (
               <div key={doc.id} className="group rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition hover:shadow-md hover:border-primary-200">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-600 text-xl font-bold text-white shadow-lg shadow-primary-500/20">
-                    {(doc.name || "D")[0]}
+                    <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-primary-600 text-xl font-bold text-white shadow-lg shadow-primary-500/20">
+                      {doc.profileImageUrl || doc.imageUrl ? (
+                        <img src={doc.profileImageUrl || doc.imageUrl} alt={doc.name} className="h-full w-full object-cover" />
+                      ) : (
+                        (doc.name || "D")[0]
+                      )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-bold text-gray-900 truncate group-hover:text-primary-700 transition">{doc.name}</h4>

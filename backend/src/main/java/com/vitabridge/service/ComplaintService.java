@@ -6,10 +6,12 @@ import com.vitabridge.model.User;
 import com.vitabridge.repository.ComplaintRepository;
 import com.vitabridge.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -23,6 +25,9 @@ public class ComplaintService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
     @Transactional
     public ComplaintDTO submitComplaint(UUID patientId, String title, String message) {
         User patient = userRepository.findById(patientId)
@@ -35,7 +40,23 @@ public class ComplaintService {
         complaint.setStatus("PENDING");
 
         complaint = complaintRepository.save(complaint);
-        return toDTO(complaint);
+        ComplaintDTO dto = toDTO(complaint);
+
+        try {
+            String destination = "/topic/admin-notifications";
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("type", "COMPLAINT_CREATED");
+            payload.put("message", "New complaint submitted by " + dto.getPatientName() + ": " + dto.getTitle());
+            payload.put("complaintId", dto.getId());
+            payload.put("patientName", dto.getPatientName());
+            payload.put("title", dto.getTitle());
+            payload.put("createdAt", dto.getCreatedAt());
+            messagingTemplate.convertAndSend(destination, payload, new HashMap<>());
+        } catch (Exception ignored) {
+            // Notification delivery should not block complaint submission.
+        }
+
+        return dto;
     }
 
     @Transactional(readOnly = true)

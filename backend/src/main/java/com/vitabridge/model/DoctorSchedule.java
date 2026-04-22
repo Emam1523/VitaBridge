@@ -44,4 +44,8 @@ public class DoctorSchedule {
     
     @Column(name = "is_active")
     private Boolean isActive = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "consultation_mode")
+    private ScheduleConsultationMode consultationMode = ScheduleConsultationMode.BOTH;
 }

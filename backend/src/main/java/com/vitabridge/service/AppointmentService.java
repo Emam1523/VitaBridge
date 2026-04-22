@@ -68,20 +68,19 @@ public class AppointmentService {
             throw new RuntimeException("Doctor's schedule for this date is inactive.");
         }
 
-        // Time-window validation: for today's date, only allow booking within start–end time
-        if (request.getAppointmentDate().equals(LocalDate.now())) {
-            java.time.LocalTime now = java.time.LocalTime.now();
-            if (schedule.getStartTime() != null && now.isBefore(schedule.getStartTime())) {
-                throw new RuntimeException(
-                    "Booking for today is not yet open. It opens at "
-                    + schedule.getStartTime().toString().substring(0, 5) + ".");
-            }
-            if (schedule.getEndTime() != null && now.isAfter(schedule.getEndTime())) {
-                throw new RuntimeException(
-                    "Booking for today has closed. Last booking was accepted at "
-                    + schedule.getEndTime().toString().substring(0, 5)
-                    + ". Please choose a future date.");
-            }
+        // Set consultation type first so we can validate against schedule mode
+        ConsultationType cType = ConsultationType.OFFLINE;
+        if (request.getConsultationType() != null && !request.getConsultationType().isBlank()) {
+            cType = ConsultationType.valueOf(request.getConsultationType());
+        }
+
+        ScheduleConsultationMode mode = schedule.getConsultationMode() != null
+                ? schedule.getConsultationMode()
+                : ScheduleConsultationMode.BOTH;
+
+        if ((mode == ScheduleConsultationMode.ONLINE && cType == ConsultationType.OFFLINE)
+                || (mode == ScheduleConsultationMode.OFFLINE && cType == ConsultationType.ONLINE)) {
+            throw new RuntimeException("This schedule only allows " + mode.name() + " consultation bookings.");
         }
 
         // Check max patient limit
@@ -104,10 +103,6 @@ public class AppointmentService {
         appointment.setStatus(AppointmentStatus.PENDING);
 
         // Set consultation type
-        ConsultationType cType = ConsultationType.OFFLINE;
-        if (request.getConsultationType() != null && !request.getConsultationType().isBlank()) {
-            cType = ConsultationType.valueOf(request.getConsultationType());
-        }
         appointment.setConsultationType(cType);
 
         // Serial number will be assigned after payment confirmation
@@ -315,9 +310,11 @@ public class AppointmentService {
         dto.setId(appointment.getId());
         dto.setPatientId(appointment.getPatient().getId());
         dto.setPatientName(appointment.getPatient().getName());
+        dto.setPatientProfileImageUrl(appointment.getPatient().getProfileImageUrl());
         dto.setDoctorId(appointment.getDoctor().getId());
         dto.setDoctorUserId(appointment.getDoctor().getUser().getId());
         dto.setDoctorName(appointment.getDoctor().getUser().getName());
+        dto.setDoctorProfileImageUrl(appointment.getDoctor().getUser().getProfileImageUrl());
         dto.setSpecialty(appointment.getDoctor().getSpecialty());
         dto.setAppointmentDate(appointment.getAppointmentDate());
         dto.setReason(appointment.getReason());

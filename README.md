@@ -7,10 +7,11 @@ A comprehensive full-stack application that connects patients with qualified doc
 - **Real-time Video Consultations**: Secure video calls between patients and doctors using Agora SDK
 - **Appointment Management**: Easy booking, scheduling, and management of medical appointments
 - **Digital Prescriptions**: Doctors can generate and send digital prescriptions to patients
+- **Medical Report OCR & Analysis**: AI-powered OCR to extract and analyze lab test values from medical reports with visual comparisons
 - **Payment Integration**: Secure online payments via AamarPay gateway
 - **User Authentication**: JWT-based secure authentication with OTP verification
 - **Multi-role Support**: 
-  - Patients: Book appointments, view prescriptions, pay bills
+  - Patients: Book appointments, view prescriptions, pay bills, analyze health reports
   - Doctors: Manage appointments, create prescriptions, track consultations
   - Assistants: Support doctor operations
   - Admins: System management and oversight
@@ -32,6 +33,14 @@ A comprehensive full-stack application that connects patients with qualified doc
 - **Build Tool**: Gradle
 - **API**: RESTful Web Services
 
+### Backend2 (OCR Service)
+- **Language**: Python 3.10+
+- **Framework**: FastAPI
+- **OCR Engine**: Tesseract
+- **Database**: PostgreSQL (shared with main backend)
+- **Image Processing**: Pillow, PyPDF
+- **API**: RESTful Web Services
+
 ### Frontend
 - **Framework**: React 18
 - **Build Tool**: Vite
@@ -49,8 +58,10 @@ A comprehensive full-stack application that connects patients with qualified doc
 
 Before you begin, ensure you have installed:
 - Java 11 or higher
+- Python 3.10 or higher (for OCR service)
 - Node.js 16+ and npm
 - PostgreSQL 12+
+- Tesseract OCR (for medical report analysis)
 - Git
 - A code editor (VS Code recommended)
 
@@ -58,6 +69,7 @@ Before you begin, ensure you have installed:
 - [Agora Console Account](https://console.agora.io) - for video conferencing
 - [AamarPay Merchant Account](https://www.aamarpay.com) - for payment processing
 - Gmail Account - for SMTP email service
+- [Tesseract OCR](https://github.com/UB-Mannheim/tesseract/wiki) - for medical report OCR
 
 ## 🚀 Installation & Setup
 
@@ -123,7 +135,55 @@ APP_CALLBACK_HOST=localhost
 
 The backend will start at `http://localhost:8080`
 
-### 3. Frontend Setup
+### 3. Backend2 Setup (OCR Service)
+
+```bash
+cd ../backend2
+```
+
+#### Install Tesseract OCR
+
+**Windows:**
+1. Download from: https://github.com/UB-Mannheim/tesseract/wiki
+2. Run the installer and install to: `C:\Program Files\Tesseract-OCR`
+3. Verify: `tesseract --version`
+
+#### Configure Environment
+
+The `.env` file should already be configured. Verify:
+
+```env
+TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe
+DATABASE_URL=postgresql+psycopg://your_user:your_password@localhost:5432/VitaBridge
+```
+
+#### Verify Setup
+
+```bash
+# Run the verification script
+verify-setup.bat
+```
+
+#### Start Backend2
+
+```bash
+# Use the startup script
+start.bat
+
+# Or manually:
+python -m venv .venv
+.venv\Scripts\activate
+pip install -e .
+uvicorn app.main:app --host 0.0.0.0 --port 8011 --reload
+```
+
+The backend2 service will start at `http://localhost:8011`
+
+For detailed setup and troubleshooting, see:
+- `backend2/README.md` - Complete setup guide
+- `HEALTH_OCR_TROUBLESHOOTING.md` - Troubleshooting guide
+
+### 4. Frontend Setup
 
 ```bash
 cd ../frontend
@@ -141,6 +201,7 @@ Create a `.env.local` file in the frontend directory (optional for local dev):
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080
+VITE_BACKEND2_API_URL=http://localhost:8011/api/v1
 ```
 
 #### Run Development Server
@@ -178,12 +239,28 @@ VitaBridge/
 │   ├── gradlew                 # Gradle Wrapper
 │   └── settings.gradle
 │
+├── backend2/                   # Python FastAPI OCR Service
+│   ├── app/
+│   │   ├── api/v1/             # API routes
+│   │   ├── core/               # Settings
+│   │   ├── db/                 # Database
+│   │   ├── models/             # SQLAlchemy models
+│   │   ├── schemas/            # Pydantic schemas
+│   │   ├── services/           # OCR, parsing, analysis
+│   │   └── main.py
+│   ├── alembic/                # Database migrations
+│   ├── .env                    # Configuration
+│   ├── start.bat               # Startup script
+│   ├── verify-setup.bat        # Setup verification
+│   └── README.md               # Detailed documentation
+│
 ├── frontend/                   # React + Vite Application
 │   ├── src/
 │   │   ├── components/         # React Components
 │   │   │   ├── admin/
 │   │   │   ├── doctor/
 │   │   │   ├── patient/
+│   │   │   │   └── ReportOcr.jsx  # Health OCR feature
 │   │   │   ├── assistant/
 │   │   │   ├── authentication/
 │   │   │   ├── consultation/
@@ -199,6 +276,7 @@ VitaBridge/
 │   └── index.html
 │
 ├── README.md
+├── HEALTH_OCR_TROUBLESHOOTING.md  # OCR troubleshooting guide
 └── .gitignore
 ```
 
@@ -237,6 +315,12 @@ VitaBridge/
 - `GET /api/admin/reports` - System reports
 - `POST /api/admin/doctors` - Add new doctor
 - `DELETE /api/admin/users/{id}` - Remove user
+
+### Health OCR (Backend2)
+- `POST /api/v1/patients/{id}/reports/upload` - Upload and analyze medical report
+- `GET /api/v1/patients/{id}/trends` - Get health metric trends
+- `POST /api/v1/patients/{id}/measurements/manual` - Add manual measurement
+- `GET /api/v1/patients/{id}/measurements` - List all measurements
 
 ## 🔐 Configuration Details
 
@@ -327,6 +411,12 @@ npm test
 - Update `app.cors.allowed-origin-patterns` in `application.properties` if needed
 - Uncomment CORS settings if required
 
+### Health OCR Not Working
+- See detailed troubleshooting guide: `HEALTH_OCR_TROUBLESHOOTING.md`
+- Verify backend2 is running on port 8011
+- Check Tesseract OCR is installed correctly
+- Ensure service status shows "Online" in the Health tab
+
 ## 🚀 Deployment
 
 ### Backend Deployment (Docker)
@@ -355,9 +445,12 @@ server {
 ## 📚 Documentation
 
 - Backend API: See `backend/src/main/java/com/vitabridge/` for detailed code documentation
+- Backend2 API: Visit `http://localhost:8011/docs` for interactive API documentation
 - Frontend Components: Each component file includes JSDoc comments
 - Database Schema: Auto-generated from JPA entities
-- Configuration: Detailed in `application.properties`
+- Configuration: Detailed in `application.properties` and `backend2/.env`
+- Health OCR Setup: See `backend2/README.md`
+- Health OCR Troubleshooting: See `HEALTH_OCR_TROUBLESHOOTING.md`
 
 ## 🤝 Contributing
 
@@ -395,6 +488,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [Agora SDK](https://www.agora.io/) - Real-time video communication
 - [AamarPay](https://www.aamarpay.com/) - Payment gateway
 - [Spring Boot](https://spring.io/projects/spring-boot) - Backend framework
+- [FastAPI](https://fastapi.tiangolo.com/) - Python web framework for OCR service
+- [Tesseract OCR](https://github.com/tesseract-ocr/tesseract) - Open source OCR engine
 - [React](https://react.dev/) - Frontend framework
 - [Vite](https://vitejs.dev/) - Build tool and module bundler
 

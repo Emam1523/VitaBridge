@@ -37,9 +37,17 @@ export function AuthenticationProvider({ children }) {
 					name: authResponse.name,
 					email: authResponse.email,
 					role: authResponse.role,
+					profileImageUrl: authResponse.profileImageUrl || null,
 				}
 				: null
 		);
+	}
+
+	function updateUser(patch) {
+		setUser((current) => {
+			if (!current) return current;
+			return typeof patch === "function" ? patch(current) : { ...current, ...patch };
+		});
 	}
 
 	function logout() {
@@ -54,12 +62,38 @@ export function AuthenticationProvider({ children }) {
 		return () => window.removeEventListener("vitabridge:unauthorized", handleUnauthorized);
 	}, []);
 
+	useEffect(() => {
+		if (!token || !user) return;
+		let cancelled = false;
+
+		fetch("/api/user/photo", {
+			headers: { Authorization: `Bearer ${token}` },
+		})
+			.then((response) => (response.ok ? response.json() : null))
+			.then((data) => {
+				if (cancelled || !data) return;
+				setUser((current) => {
+					if (!current) return current;
+					return {
+						...current,
+						profileImageUrl: data.profileImageUrl || null,
+					};
+				});
+			})
+			.catch(() => {});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [token, user?.id]);
+
 	const value = useMemo(
 		() => ({
 			token,
 			user,
 			isAuthenticated: Boolean(token),
 			setAuthFromResponse,
+			updateUser,
 			logout,
 		}),
 		[token, user]

@@ -26,6 +26,12 @@ export default function BookAppointment() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const todayKey = (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+      now.getDate()
+    ).padStart(2, "0")}`;
+  })();
 
   // Load doctor info and schedules
   useEffect(() => {
@@ -35,30 +41,31 @@ export default function BookAppointment() {
   }, [doctorId]);
 
   // Check selected date availability
-  const selectedSchedule = schedules.find((s) => s.scheduleDate === selectedDate && s.isActive !== false);
+  const selectedSchedule = schedules.find(
+    (s) => s.scheduleDate === selectedDate && s.isActive !== false && String(s.scheduleDate) >= todayKey
+  );
   const isFull = selectedSchedule ? selectedSchedule.bookedCount >= selectedSchedule.maxPatients : false;
   const hasSchedule = selectedSchedule != null;
   const remainingSlots = selectedSchedule ? selectedSchedule.maxPatients - selectedSchedule.bookedCount : 0;
+  const activeSchedules = schedules
+    .filter((s) => s.isActive !== false && String(s.scheduleDate) >= todayKey)
+    .sort((a, b) => String(a.scheduleDate).localeCompare(String(b.scheduleDate)));
+  const scheduleMode = (selectedSchedule?.consultationMode || "BOTH").toUpperCase();
+  const isConsultationTypeAllowed =
+    !hasSchedule || scheduleMode === "BOTH" || consultationType === scheduleMode;
 
-  // Time-window check: for today's date verify we are within the schedule's open hours
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const isToday = selectedDate === todayStr;
-  const scheduleTimeStatus = (() => {
-    if (!hasSchedule || !isToday) return "ok";
-    const now = new Date();
-    const nowMins = now.getHours() * 60 + now.getMinutes();
-    const parseTime = (t) => {
-      if (!t) return null;
-      const [h, m] = String(t).split(":").map(Number);
-      return h * 60 + (m || 0);
-    };
-    const startMins = parseTime(selectedSchedule.startTime);
-    const endMins = parseTime(selectedSchedule.endTime);
-    if (startMins !== null && nowMins < startMins) return "before";
-    if (endMins !== null && nowMins > endMins) return "after";
-    return "ok";
-  })();
-  const isBookingTimeOpen = scheduleTimeStatus === "ok";
+  const isTypeAvailableForSchedule = (type) => {
+    if (!hasSchedule) return true;
+    if (scheduleMode === "BOTH") return true;
+    return scheduleMode === type;
+  };
+
+  useEffect(() => {
+    if (!hasSchedule) return;
+    if (scheduleMode !== "BOTH" && consultationType !== scheduleMode) {
+      setConsultationType(scheduleMode);
+    }
+  }, [hasSchedule, scheduleMode, consultationType]);
 
   const handleBook = async (e) => {
     e.preventDefault();
@@ -74,12 +81,9 @@ export default function BookAppointment() {
       setError("This date is fully booked. Maximum " + selectedSchedule.maxPatients + " patients allowed. Please choose another date.");
       return;
     }
-    if (!isBookingTimeOpen) {
-      setError(
-        scheduleTimeStatus === "before"
-          ? `Booking for today opens at ${String(selectedSchedule.startTime).slice(0, 5)}.`
-          : `Booking for today closed at ${String(selectedSchedule.endTime).slice(0, 5)}. Please choose another date.`
-      );
+    if (!isConsultationTypeAllowed) {
+      const modeLabel = scheduleMode === "ONLINE" ? "online" : "offline";
+      setError(`This date only allows ${modeLabel} consultation. Please choose the correct type.`);
       return;
     }
 
@@ -97,7 +101,7 @@ export default function BookAppointment() {
       try {
         const payData = await initAamarPayPayment(booked.id, token);
         if (payData && payData.paymentUrl) {
-          window.location.href = payData.paymentUrl;
+          window.location.replace(payData.paymentUrl);
           return;
         }
       } catch {
@@ -147,8 +151,12 @@ export default function BookAppointment() {
           {doctor && (
             <div className="bg-primary-600 p-6 text-white">
               <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 text-2xl font-bold backdrop-blur">
-                  {doctor.name.charAt(0)}
+                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white/20 text-2xl font-bold backdrop-blur">
+                  {doctor.profileImageUrl || doctor.imageUrl ? (
+                    <img src={doctor.profileImageUrl || doctor.imageUrl} alt={doctor.name} className="h-full w-full object-cover" />
+                  ) : (
+                    doctor.name.charAt(0)
+                  )}
                 </div>
                 <div>
                   <h2 className="text-xl font-bold"> {doctor.name}</h2>
@@ -176,10 +184,15 @@ export default function BookAppointment() {
                 <div className="grid grid-cols-2 gap-3">
                   {CONSULTATION_TYPES.map((ct) => (
                     <button key={ct.value} type="button" onClick={() => setConsultationType(ct.value)}
+                      disabled={!isTypeAvailableForSchedule(ct.value)}
                       className={`rounded-xl border-2 p-4 text-center transition ${
                         consultationType === ct.value
                           ? "border-primary-500 bg-primary-50 ring-4 ring-primary-500/10"
                           : "border-gray-100 bg-white hover:border-primary-200 hover:bg-primary-50/50"
+                      } ${
+                        !isTypeAvailableForSchedule(ct.value)
+                          ? "cursor-not-allowed opacity-50"
+                          : ""
                       }`}>
                       <span className="text-3xl block">{ct.icon}</span>
                       <span className="mt-2 block text-sm font-bold text-gray-900">{ct.label}</span>
@@ -187,6 +200,11 @@ export default function BookAppointment() {
                     </button>
                   ))}
                 </div>
+                {selectedDate && hasSchedule && scheduleMode !== "BOTH" && (
+                  <p className="mt-2 text-xs font-medium text-amber-700">
+                    This date is available for {scheduleMode.toLowerCase()} consultation only.
+                  </p>
+                )}
               </div>
 
               {/* Info Banner */}
@@ -210,6 +228,39 @@ export default function BookAppointment() {
                   onChange={(e) => setSelectedDate(e.target.value)} required
                   className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm transition focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-500/10 outline-none" />
 
+                {activeSchedules.length > 0 && (
+                  <div className="mt-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-600">Doctor Schedule</p>
+                    <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
+                      {activeSchedules.map((s) => {
+                        const mode = (s.consultationMode || "BOTH").toUpperCase();
+                        const isSelected = selectedDate === s.scheduleDate;
+                        return (
+                          <button
+                            key={`${s.scheduleDate}-${s.startTime}-${s.endTime}`}
+                            type="button"
+                            onClick={() => setSelectedDate(s.scheduleDate)}
+                            className={`w-full rounded-lg border px-3 py-2 text-left text-xs transition ${
+                              isSelected
+                                ? "border-primary-300 bg-primary-50"
+                                : "border-gray-200 bg-white hover:border-primary-200"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-semibold text-gray-900">{s.scheduleDate}</span>
+                              <span className="text-gray-600">{String(s.startTime).slice(0, 5)} - {String(s.endTime).slice(0, 5)}</span>
+                            </div>
+                            <div className="mt-1 flex items-center justify-between text-gray-600">
+                              <span>{mode === "BOTH" ? "Online & Offline" : mode === "ONLINE" ? "Online only" : "Offline only"}</span>
+                              <span>{Math.max((s.maxPatients || 0) - (s.bookedCount || 0), 0)} slots left</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Schedule availability indicator */}
                 {selectedDate && !hasSchedule && (
                   <div className="mt-2 flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
@@ -226,30 +277,19 @@ export default function BookAppointment() {
                 )}
 
                 {selectedDate && hasSchedule && !isFull && (
-                  <div className={`mt-2 rounded-lg border px-3 py-2.5 ${isBookingTimeOpen ? "bg-green-50 border-green-200" : scheduleTimeStatus === "before" ? "bg-amber-50 border-amber-200" : "bg-red-50 border-red-200"}`}>
+                  <div className="mt-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className={`text-sm font-medium ${isBookingTimeOpen ? "text-green-800" : scheduleTimeStatus === "before" ? "text-amber-800" : "text-red-800"}`}>
-                        {isBookingTimeOpen ? "✅ Schedule available" : scheduleTimeStatus === "before" ? "⏳ Not yet open" : "🚫 Booking closed"}
+                      <span className="text-sm font-medium text-green-800">
+                        ✅ Schedule available
                       </span>
                       <span className="text-xs text-gray-600">
                         {String(selectedSchedule.startTime).slice(0, 5)} – {String(selectedSchedule.endTime).slice(0, 5)}
                       </span>
                     </div>
-                    {isToday && !isBookingTimeOpen && (
-                      <p className={`text-xs mb-1.5 ${scheduleTimeStatus === "before" ? "text-amber-700" : "text-red-700"}`}>
-                        {scheduleTimeStatus === "before"
-                          ? `Booking opens at ${String(selectedSchedule.startTime).slice(0, 5)}. Please come back then.`
-                          : `Booking for today ended at ${String(selectedSchedule.endTime).slice(0, 5)}. Please select a future date.`}
-                      </p>
-                    )}
-                    {isBookingTimeOpen && (
-                      <>
-                        <div className="w-full bg-green-200 rounded-full h-2">
-                          <div className="bg-green-500 h-2 rounded-full transition-all" style={{ width: `${(selectedSchedule.bookedCount / selectedSchedule.maxPatients) * 100}%` }}></div>
-                        </div>
-                        <p className="text-xs text-green-700 mt-1">{remainingSlots} of {selectedSchedule.maxPatients} slots remaining</p>
-                      </>
-                    )}
+                    <div className="w-full bg-green-200 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full transition-all" style={{ width: `${(selectedSchedule.bookedCount / selectedSchedule.maxPatients) * 100}%` }}></div>
+                    </div>
+                    <p className="text-xs text-green-700 mt-1">{remainingSlots} of {selectedSchedule.maxPatients} slots remaining</p>
                   </div>
                 )}
               </div>
@@ -270,7 +310,7 @@ export default function BookAppointment() {
                 </div>
               )}
 
-              <button type="submit" disabled={bookingLoading || !selectedDate || !reason.trim() || !hasSchedule || isFull || !isBookingTimeOpen}
+              <button type="submit" disabled={bookingLoading || !selectedDate || !reason.trim() || !hasSchedule || isFull || !isConsultationTypeAllowed}
                 className="w-full rounded-xl bg-primary-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary-500/25 transition hover:shadow-primary-500/40 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
                 {bookingLoading ? (
                   <span className="flex items-center justify-center gap-2">

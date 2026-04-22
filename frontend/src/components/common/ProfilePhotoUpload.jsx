@@ -11,7 +11,7 @@ import { useAuth } from "../../context/AuthenticationContext";
  *  gradient – true uses the admin/assistant gradient bg; false uses solid primary-600
  */
 export default function ProfileAvatar({ initial = "U", rounded = "full", gradient = false }) {
-  const { token } = useAuth();
+  const { token, updateUser } = useAuth();
   const inputRef = useRef(null);
 
   const [photoUrl, setPhotoUrl] = useState(null);
@@ -51,6 +51,7 @@ export default function ProfileAvatar({ initial = "U", rounded = "full", gradien
       if (!res.ok) throw new Error("Upload failed");
       const data = await res.json();
       setPhotoUrl(data.profileImageUrl);
+      updateUser?.({ profileImageUrl: data.profileImageUrl });
     } catch (err) {
       setError(err.message || "Upload failed.");
     } finally {
@@ -69,6 +70,7 @@ export default function ProfileAvatar({ initial = "U", rounded = "full", gradien
       });
       if (!res.ok) throw new Error("Remove failed");
       setPhotoUrl(null);
+      updateUser?.({ profileImageUrl: null });
     } catch (err) {
       setError(err.message || "Could not remove.");
     } finally {

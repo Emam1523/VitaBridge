@@ -67,6 +67,12 @@ export async function uploadDocument(file, description, token) {
   return response.json();
 }
 
+export function getDocumentDownloadUrl(fileUrl) {
+  const baseUrl = getApiBaseUrl();
+  const origin = baseUrl === "/api" ? window.location.origin : baseUrl.replace(/\/api$/, "");
+  return new URL(fileUrl, origin).toString();
+}
+
 export function deleteDocument(documentId, token) {
   return apiRequest(`/patient/documents/${documentId}`, { method: "DELETE", token });
 }

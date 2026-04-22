@@ -77,6 +77,7 @@ export default function Navbar() {
 							<NavLink to="/" className={navLinkClass} end>Home</NavLink>
 							<NavLink to="/about" className={navLinkClass}>About</NavLink>
 							<NavLink to="/services" className={navLinkClass}>Services</NavLink>
+							<NavLink to="/symptom-check" className={navLinkClass}>AI Symptom Check</NavLink>
 							<NavLink to="/doctors" className={navLinkClass}>Doctors</NavLink>
 							<NavLink to="/contact" className={navLinkClass}>Contact</NavLink>
 						</nav>
@@ -147,6 +148,7 @@ export default function Navbar() {
 							<NavLink to="/" className={mobileNavLinkClass} end onClick={() => setOpen(false)}>Home</NavLink>
 							<NavLink to="/about" className={mobileNavLinkClass} onClick={() => setOpen(false)}>About</NavLink>
 							<NavLink to="/services" className={mobileNavLinkClass} onClick={() => setOpen(false)}>Services</NavLink>
+							<NavLink to="/symptom-check" className={mobileNavLinkClass} onClick={() => setOpen(false)}>AI Symptom Check</NavLink>
 							<NavLink to="/doctors" className={mobileNavLinkClass} onClick={() => setOpen(false)}>Doctors</NavLink>
 							<NavLink to="/contact" className={mobileNavLinkClass} onClick={() => setOpen(false)}>Contact</NavLink>
 						</nav>

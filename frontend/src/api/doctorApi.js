@@ -45,6 +45,22 @@ export function getMySchedules(token) {
   return apiRequest("/doctor/schedules", { token });
 }
 
+export function createMySchedule(data, token) {
+  return apiRequest("/doctor/schedules", { method: "POST", body: data, token });
+}
+
+export function deleteMySchedule(scheduleId, token) {
+  return apiRequest(`/doctor/schedules/${scheduleId}`, { method: "DELETE", token });
+}
+
+export function stopMySchedule(scheduleId, token) {
+  return apiRequest(`/doctor/schedules/${scheduleId}/stop`, { method: "PUT", token });
+}
+
+export function resumeMySchedule(scheduleId, token) {
+  return apiRequest(`/doctor/schedules/${scheduleId}/resume`, { method: "PUT", token });
+}
+
 export function toggleConsultationLock(appointmentId, locked, token) {
   return apiRequest(`/doctor/appointments/${appointmentId}/lock?locked=${locked}`, {
     method: "PUT",
@@ -110,6 +126,13 @@ export function getMyAssistants(token) {
 
 export function removeAssistant(assistantUserId, token) {
   return apiRequest(`/doctor/assistants/${assistantUserId}/remove`, { method: "DELETE", token });
+}
+
+export function updateAssistantStatus(assistantUserId, active, token) {
+  return apiRequest(`/doctor/assistants/${assistantUserId}/status?active=${active}`, {
+    method: "PUT",
+    token,
+  });
 }
 
 // Patient data access during consultation

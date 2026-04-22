@@ -31,15 +31,27 @@ export function NotificationProvider({ children }) {
   const clearAll = useCallback(() => setNotifications([]), []);
 
   useEffect(() => {
-    // Only patients receive queue notifications
-    if (!token || !user?.id || user?.role !== "PATIENT") return;
+    if (!token || !user?.id) return;
 
-    const key = `patient-notifications-${user.id}`;
-    // Register with the shared wsClient singleton (no-op if WS not yet connected;
-    // wsClient re-subscribes automatically on connect/reconnect)
-    subscribe(key, `/topic/patient-notifications/${user.id}`, addNotification);
+    const subscriptions = [];
 
-    return () => { unsubscribe(key); };
+    if (user?.role === "PATIENT") {
+      const key = `patient-notifications-${user.id}`;
+      subscriptions.push([key, `/topic/patient-notifications/${user.id}`]);
+    }
+
+    if (user?.role === "ADMIN") {
+      const key = `admin-notifications-${user.id}`;
+      subscriptions.push([key, "/topic/admin-notifications"]);
+    }
+
+    subscriptions.forEach(([key, destination]) => {
+      // Register with the shared wsClient singleton (no-op if WS not yet connected;
+      // wsClient re-subscribes automatically on connect/reconnect)
+      subscribe(key, destination, addNotification);
+    });
+
+    return () => { subscriptions.forEach(([key]) => unsubscribe(key)); };
   }, [token, user?.id, user?.role, addNotification]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;

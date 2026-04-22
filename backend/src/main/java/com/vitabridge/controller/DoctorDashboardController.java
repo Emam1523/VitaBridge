@@ -236,6 +236,44 @@ public class DoctorDashboardController {
         return ResponseEntity.ok(scheduleService.convertToDTO(schedules));
     }
 
+    @PostMapping("/schedules")
+    public ResponseEntity<ScheduleDTO> createSchedule(@AuthenticationPrincipal User user,
+            @RequestBody DoctorSchedule schedule) {
+        DoctorProfile doctor = doctorRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Doctor profile not found"));
+        schedule.setDoctor(doctor);
+        DoctorSchedule created = scheduleService.createSchedule(schedule);
+        return ResponseEntity.ok(scheduleService.convertToDTO(created));
+    }
+
+    @DeleteMapping("/schedules/{scheduleId}")
+    public ResponseEntity<Void> deleteSchedule(@PathVariable UUID scheduleId,
+            @AuthenticationPrincipal User user) {
+        DoctorDTO doctor = doctorService.getDoctorByUserId(user.getId());
+        DoctorSchedule schedule = scheduleService.getScheduleById(scheduleId);
+        requireScheduleOwnership(doctor.getId(), schedule);
+        scheduleService.deleteSchedule(scheduleId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/schedules/{scheduleId}/stop")
+    public ResponseEntity<ScheduleDTO> stopSchedule(@PathVariable UUID scheduleId,
+            @AuthenticationPrincipal User user) {
+        DoctorDTO doctor = doctorService.getDoctorByUserId(user.getId());
+        DoctorSchedule schedule = scheduleService.getScheduleById(scheduleId);
+        requireScheduleOwnership(doctor.getId(), schedule);
+        return ResponseEntity.ok(scheduleService.stopSchedule(scheduleId));
+    }
+
+    @PutMapping("/schedules/{scheduleId}/resume")
+    public ResponseEntity<ScheduleDTO> resumeSchedule(@PathVariable UUID scheduleId,
+            @AuthenticationPrincipal User user) {
+        DoctorDTO doctor = doctorService.getDoctorByUserId(user.getId());
+        DoctorSchedule schedule = scheduleService.getScheduleById(scheduleId);
+        requireScheduleOwnership(doctor.getId(), schedule);
+        return ResponseEntity.ok(scheduleService.resumeSchedule(scheduleId));
+    }
+
     // Assistant Management
 
     @GetMapping("/assistants")
@@ -269,6 +307,15 @@ public class DoctorDashboardController {
         return ResponseEntity.noContent().build();
     }
 
+        @PutMapping("/assistants/{assistantUserId}/status")
+        public ResponseEntity<AssistantDTO> updateAssistantStatus(@PathVariable UUID assistantUserId,
+                @RequestParam boolean active,
+                @AuthenticationPrincipal User user) {
+        DoctorProfile doctor = doctorRepository.findByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Doctor profile not found"));
+            return ResponseEntity.ok(assistantService.setAssistantActiveForDoctor(assistantUserId, doctor.getId(), active));
+        }
+
     // Consultation - Patient Data Access
 
     @GetMapping("/appointments/{appointmentId}/patient/documents")
@@ -298,6 +345,12 @@ public class DoctorDashboardController {
         Appointment appointment = appointmentService.getAppointmentEntityForDoctor(doctor.getId(), appointmentId);
         boolean hasAccess = medicalAccessService.hasAccess(appointment.getPatient().getId(), user.getId());
         return ResponseEntity.ok(java.util.Map.of("hasAccess", hasAccess));
+    }
+
+    private void requireScheduleOwnership(UUID doctorId, DoctorSchedule schedule) {
+        if (schedule.getDoctor() == null || !schedule.getDoctor().getId().equals(doctorId)) {
+            throw new org.springframework.security.access.AccessDeniedException("You can only manage your own schedules");
+        }
     }
 
 }

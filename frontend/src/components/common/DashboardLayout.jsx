@@ -23,7 +23,7 @@ function NotificationBell() {
   };
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative z-[120]">
       <button
         onClick={toggle}
         className="relative flex h-9 w-9 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
@@ -41,34 +41,37 @@ function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 z-50 w-80 rounded-2xl border border-gray-100 bg-white shadow-xl shadow-gray-200/60">
-          <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
-            <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
-            {notifications?.length > 0 && (
-              <button onClick={clearAll} className="text-xs text-gray-400 hover:text-red-500 transition-colors">
-                Clear all
-              </button>
-            )}
-          </div>
-          <div className="max-h-72 overflow-y-auto">
-            {!notifications?.length ? (
-              <div className="px-4 py-8 text-center">
-                <div className="mx-auto mb-2 text-2xl">🔔</div>
-                <p className="text-sm text-gray-400">No notifications yet</p>
-              </div>
-            ) : (
-              notifications.map((n) => (
-                <div key={n.id}
-                  className={`border-b border-gray-50 px-4 py-3 last:border-0 ${n.type === "YOUR_TURN" ? "bg-green-50" : ""}`}>
-                  <p className={`text-sm font-medium leading-snug ${n.type === "YOUR_TURN" ? "text-green-800" : "text-gray-800"}`}>
-                    {n.message}
-                  </p>
-                  <p className="mt-0.5 text-xs text-gray-400">{n.ts}</p>
+        <>
+          <div className="fixed inset-0 z-[9998] bg-black/25 backdrop-blur-[1px]" onClick={() => setOpen(false)} />
+          <div className="fixed right-4 top-16 z-[9999] w-[22rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-gray-200 bg-white/100 ring-1 ring-black/5 shadow-2xl shadow-gray-400/70 sm:right-6 sm:top-20">
+            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+              <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
+              {notifications?.length > 0 && (
+                <button onClick={clearAll} className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                  Clear all
+                </button>
+              )}
+            </div>
+            <div className="max-h-72 overflow-y-auto">
+              {!notifications?.length ? (
+                <div className="px-4 py-8 text-center">
+                  <div className="mx-auto mb-2 text-2xl">🔔</div>
+                  <p className="text-sm text-gray-400">No notifications yet</p>
                 </div>
-              ))
-            )}
+              ) : (
+                notifications.map((n) => (
+                  <div key={n.id}
+                    className={`border-b border-gray-50 px-4 py-3 last:border-0 ${n.type === "YOUR_TURN" ? "bg-green-50" : ""}`}>
+                    <p className={`text-sm font-medium leading-snug ${n.type === "YOUR_TURN" ? "text-green-800" : "text-gray-800"}`}>
+                      {n.message}
+                    </p>
+                    <p className="mt-0.5 text-xs text-gray-400">{n.ts}</p>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
@@ -131,6 +134,7 @@ export default function DashboardLayout({ title, links, children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const notifCtx = useNotifications();
   const isPatient = user?.role === "PATIENT";
+  const isAdmin = user?.role === "ADMIN";
 
   const handleLogout = () => {
     logout();
@@ -143,6 +147,8 @@ export default function DashboardLayout({ title, links, children }) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  const avatarUrl = user?.profileImageUrl || null;
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -176,9 +182,13 @@ export default function DashboardLayout({ title, links, children }) {
           {/* User Info */}
           <div className="p-5 border-b border-gray-100">
             <div className="flex items-center gap-3 rounded-xl bg-gray-50 p-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-white text-sm font-bold shadow-md shadow-primary-200/50">
-                {initials}
-              </div>
+                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-white text-sm font-bold shadow-md shadow-primary-200/50">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={user?.name || "Profile"} className="h-full w-full object-cover" />
+                  ) : (
+                    initials
+                  )}
+                </div>
               <div className="overflow-hidden flex-1">
                 <p className="truncate text-sm font-semibold text-gray-900">{user?.name}</p>
                 <p className="truncate text-xs text-gray-500 capitalize">{user?.role?.toLowerCase()}</p>
@@ -249,11 +259,15 @@ export default function DashboardLayout({ title, links, children }) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Notification bell — only for patients */}
-            {isPatient && notifCtx && <NotificationBell />}
+            {/* Notification bell — patients and admins */}
+            {(isPatient || isAdmin) && notifCtx && <NotificationBell />}
 
-            <div className="h-8 w-8 flex items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-white text-xs font-bold shadow-sm shadow-primary-200/50 select-none">
-              {(user?.name || "U").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+            <div className="h-8 w-8 flex items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary-500 to-primary-600 text-white text-xs font-bold shadow-sm shadow-primary-200/50 select-none">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={user?.name || "Profile"} className="h-full w-full object-cover" />
+              ) : (
+                (user?.name || "U").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
+              )}
             </div>
           </div>
         </header>

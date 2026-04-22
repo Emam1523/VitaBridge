@@ -140,75 +140,6 @@ public class AdminService {
     }
     
     @Transactional
-    public void deleteUser(UUID userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        UUID doctorProfileId = user.getDoctorProfile() != null ? user.getDoctorProfile().getId() : null;
-        UUID patientProfileId = user.getPatientProfile() != null ? user.getPatientProfile().getId() : null;
-
-        // Collect all appointment IDs related to this user
-        List<UUID> appointmentIds = new ArrayList<>();
-        if (doctorProfileId != null) {
-            appointmentRepository.findByDoctorId(doctorProfileId)
-                    .forEach(a -> appointmentIds.add(a.getId()));
-        }
-        appointmentRepository.findByPatientId(userId)
-                .forEach(a -> {
-                    if (!appointmentIds.contains(a.getId())) {
-                        appointmentIds.add(a.getId());
-                    }
-                });
-
-        // Delete all records that reference appointments
-        for (java.util.UUID appointmentId : appointmentIds) {
-            chatMessageRepository.deleteByAppointmentId(appointmentId);
-            prescriptionRepository.deleteByAppointmentId(appointmentId);
-            paymentRepository.deleteByAppointmentId(appointmentId);
-            reviewRepository.deleteByAppointmentId(appointmentId);
-        }
-
-        // Delete remaining reviews referencing doctor or patient directly
-        if (doctorProfileId != null) {
-            reviewRepository.deleteByDoctorId(doctorProfileId);
-        }
-        reviewRepository.deleteByPatientId(userId);
-
-        // Delete medical reports
-        if (doctorProfileId != null) {
-            medicalReportRepository.deleteByDoctorId(doctorProfileId);
-        }
-        if (patientProfileId != null) {
-            medicalReportRepository.deleteByPatientId(patientProfileId);
-        }
-
-        // Delete appointments
-        if (doctorProfileId != null) {
-            appointmentRepository.deleteByDoctorId(doctorProfileId);
-        }
-        appointmentRepository.deleteByPatientId(userId);
-
-        // Null out assistant assignments to this doctor (assigned_doctor_id FK → doctor_profiles)
-        if (doctorProfileId != null) {
-            List<Assistant> assignedAssistants = assistantRepository.findByAssignedDoctorId(doctorProfileId);
-            for (Assistant assistant : assignedAssistants) {
-                assistant.setAssignedDoctor(null);
-                assistantRepository.save(assistant);
-            }
-        }
-
-        // Delete medical access records (patient_id / doctor_id FK → users)
-        medicalAccessRepository.deleteByPatientId(userId);
-        medicalAccessRepository.deleteByDoctorId(userId);
-
-        // Delete complaints submitted by this user (complaints.patient_id FK → users)
-        complaintRepository.deleteByPatientId(userId);
-
-        // Delete user (cascades to DoctorProfile→DoctorSchedules, PatientProfile→MedicalDocuments, Assistant, AdminProfile)
-        userRepository.deleteById(userId);
-    }
-    
-    @Transactional
     public void removeDoctor(UUID doctorId) {
         DoctorProfile doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
@@ -313,6 +244,7 @@ public class AdminService {
         dto.setName(user.getName());
         dto.setEmail(user.getEmail());
         dto.setPhoneNumber(user.getPhoneNumber());
+        dto.setProfileImageUrl(user.getProfileImageUrl());
         dto.setRole(user.getRole().name());
         dto.setIsActive(user.getIsActive());
         return dto;
@@ -357,6 +289,7 @@ public class AdminService {
         dto.setAssistantName(assistant.getUser().getName());
         dto.setAssistantEmail(assistant.getUser().getEmail());
         dto.setAssistantPhone(assistant.getUser().getPhoneNumber());
+        dto.setAssistantProfileImageUrl(assistant.getUser().getProfileImageUrl());
         dto.setEmployeeId(assistant.getEmployeeId());
         dto.setIsActive(assistant.getUser().getIsActive());
         

@@ -125,6 +125,23 @@ public class AssistantService {
         assistant.setAssignedDoctor(null);
         assistantRepository.save(assistant);
     }
+
+    @Transactional
+    public AssistantDTO setAssistantActiveForDoctor(UUID assistantUserId, UUID doctorId, boolean active) {
+        Assistant assistant = assistantRepository.findByUserId(assistantUserId)
+                .orElseThrow(() -> new RuntimeException("Assistant not found"));
+
+        if (assistant.getAssignedDoctor() == null ||
+                !assistant.getAssignedDoctor().getId().equals(doctorId)) {
+            throw new AccessDeniedException("This assistant is not assigned to you");
+        }
+
+        User user = assistant.getUser();
+        user.setIsActive(active);
+        userRepository.save(user);
+
+        return convertToDTO(assistant);
+    }
     
     @Transactional
     public AssistantDTO updateAssistantProfile(UUID userId, AssistantDTO assistantDTO) {
@@ -162,6 +179,7 @@ public class AssistantService {
         dto.setName(assistant.getUser().getName());
         dto.setEmail(assistant.getUser().getEmail());
         dto.setPhoneNumber(assistant.getUser().getPhoneNumber());
+        dto.setProfileImageUrl(assistant.getUser().getProfileImageUrl());
         dto.setEmployeeId(assistant.getEmployeeId());
         dto.setBio(assistant.getBio());
         dto.setAddress(assistant.getAddress());

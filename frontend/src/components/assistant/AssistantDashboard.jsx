@@ -254,8 +254,12 @@ export default function AssistantDashboard() {
                 {pendingAppointments.map((appt) => (
                   <div key={appt.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors gap-4">
                     <div className="flex items-center gap-4 min-w-0">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center text-white font-semibold text-sm shrink-0">
-                        {appt.patientName?.charAt(0) || "P"}
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 flex items-center justify-center overflow-hidden text-white font-semibold text-sm shrink-0">
+                        {appt.patientProfileImageUrl ? (
+                          <img src={appt.patientProfileImageUrl} alt={appt.patientName} className="h-full w-full object-cover" />
+                        ) : (
+                          appt.patientName?.charAt(0) || "P"
+                        )}
                       </div>
                       <div className="min-w-0">
                         <p className="font-medium text-gray-900 truncate">{appt.patientName}</p>

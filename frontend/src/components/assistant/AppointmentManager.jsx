@@ -268,8 +268,12 @@ export default function AppointmentManager() {
                     <tr key={appt.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500 to-primary-500 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-                            {appt.patientName?.charAt(0) || "P"}
+                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500 to-primary-500 flex items-center justify-center overflow-hidden text-white font-semibold text-xs flex-shrink-0">
+                            {appt.patientProfileImageUrl ? (
+                              <img src={appt.patientProfileImageUrl} alt={appt.patientName} className="h-full w-full object-cover" />
+                            ) : (
+                              appt.patientName?.charAt(0) || "P"
+                            )}
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">{appt.patientName}</p>
@@ -380,8 +384,12 @@ export default function AppointmentManager() {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-500 flex items-center justify-center text-white font-semibold text-sm">
-                        {appt.patientName?.charAt(0) || "P"}
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-primary-500 flex items-center justify-center overflow-hidden text-white font-semibold text-sm">
+                        {appt.patientProfileImageUrl ? (
+                          <img src={appt.patientProfileImageUrl} alt={appt.patientName} className="h-full w-full object-cover" />
+                        ) : (
+                          appt.patientName?.charAt(0) || "P"
+                        )}
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">{appt.patientName}</p>

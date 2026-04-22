@@ -26,8 +26,11 @@ import DoctorSearch from "./components/patient/DoctorSearch";
 import PatientDocument from "./components/patient/Document";
 import PatientPayment from "./components/patient/Payment";
 import PatientConsultation from "./components/patient/Consultation";
+import ConsultationHub from "./components/patient/ConsultationHub";
 import PaymentCallback from "./components/patient/PaymentCallback";
 import PatientComplaint from "./components/patient/Complaint";
+import SymptomCheck from "./components/patient/SymptomCheck";
+import ReportOcr from "./components/patient/ReportOcr";
 
 // Doctor
 import DoctorDashboard from "./components/doctor/DoctorDashboard";
@@ -81,6 +84,7 @@ function AppShell() {
                 <Route path="/about" element={<RedirectAuthenticated><About /></RedirectAuthenticated>} />
                 <Route path="/services" element={<RedirectAuthenticated><Services /></RedirectAuthenticated>} />
                 <Route path="/contact" element={<RedirectAuthenticated><Contact /></RedirectAuthenticated>} />
+                <Route path="/symptom-check" element={<SymptomCheck publicView />} />
                 <Route path="/doctors" element={<RedirectAuthenticated><DoctorList /></RedirectAuthenticated>} />
                 <Route path="/doctors/:id" element={<RedirectAuthenticated><DoctorPublicProfile /></RedirectAuthenticated>} />
                 <Route path="/login" element={<RedirectAuthenticated><Login /></RedirectAuthenticated>} />
@@ -94,10 +98,14 @@ function AppShell() {
                 <Route element={<RequireAuth allowedRoles={['PATIENT']} />}>
                     <Route path="/patient/dashboard" element={<PatientDashboard />} />
                     <Route path="/patient/profile" element={<Profile />} />
+                    <Route path="/patient/symptom-check" element={<SymptomCheck />} />
                     <Route path="/patient/appointments" element={<MyAppointment />} />
+                    <Route path="/patient/consultations" element={<ConsultationHub />} />
                     <Route path="/patient/consultation/:appointmentId" element={<PatientConsultation />} />
                     <Route path="/patient/doctors" element={<DoctorSearch />} />
                     <Route path="/patient/doctors/:id" element={<DoctorPublicProfile />} />
+                    <Route path="/patient/health" element={<ReportOcr />} />
+                    <Route path="/patient/report-ocr" element={<ReportOcr />} />
                     <Route path="/patient/documents" element={<PatientDocument />} />
                     <Route path="/patient/payments" element={<PatientPayment />} />
                     <Route path="/patient/complaints" element={<PatientComplaint />} />

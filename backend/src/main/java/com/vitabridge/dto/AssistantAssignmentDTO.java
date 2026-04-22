@@ -15,6 +15,7 @@ public class AssistantAssignmentDTO {
     private String assistantName;
     private String assistantEmail;
     private String assistantPhone;
+    private String assistantProfileImageUrl;
     private String employeeId;
     private UUID doctorId;
     private String doctorName;

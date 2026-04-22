@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import DashboardLayout from "../common/DashboardLayout";
 import { useAuth } from "../../context/AuthenticationContext";
-import { getUsersByRole, toggleUserStatus, deleteUser } from "../../api/adminApi";
+import { getUsersByRole, toggleUserStatus } from "../../api/adminApi";
 import { ADMIN_LINKS } from "./adminLinks";
 
 export default function ManageUser() {
@@ -11,7 +11,6 @@ export default function ManageUser() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selected, setSelected] = useState(null);
   const [actionError, setActionError] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -34,18 +33,6 @@ export default function ManageUser() {
       fetchUsers();
     } catch (err) {
       setActionError("Failed to update status: " + err.message);
-    }
-  };
-
-  const handleDelete = async (userId) => {
-    setActionError("");
-    try {
-      await deleteUser(userId, token);
-      setConfirmDelete(null);
-      fetchUsers();
-    } catch (err) {
-      setActionError("Failed to delete user: " + err.message);
-      setConfirmDelete(null);
     }
   };
 
@@ -91,8 +78,12 @@ export default function ManageUser() {
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-sm">
-                          {(user.name || "?")[0]}
+                        <div className="h-9 w-9 overflow-hidden rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-sm">
+                          {user.profileImageUrl ? (
+                            <img src={user.profileImageUrl} alt={user.name} className="h-full w-full object-cover" />
+                          ) : (
+                            (user.name || "?")[0]
+                          )}
                         </div>
                         <div>
                           <div className="font-medium text-gray-900">{user.name}</div>
@@ -114,35 +105,12 @@ export default function ManageUser() {
                           className={`rounded px-2 py-1 text-xs font-medium ${user.isActive ? "bg-yellow-50 text-yellow-700 hover:bg-yellow-100" : "bg-green-50 text-green-700 hover:bg-green-100"}`}>
                           {user.isActive ? "Deactivate" : "Activate"}
                         </button>
-                        {user.role !== "ADMIN" && (
-                          <button onClick={() => setConfirmDelete(user)}
-                            className="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100">Delete</button>
-                        )}
                       </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setConfirmDelete(null)}>
-          <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mx-auto">
-              <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            </div>
-            <h3 className="text-center text-lg font-bold text-gray-900 mb-2">Delete Patient?</h3>
-            <p className="text-center text-sm text-gray-500 mb-6">
-              This will permanently delete <span className="font-semibold text-gray-800">{confirmDelete.name}</span> and all their records. This cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmDelete(null)} className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
-              <button onClick={() => handleDelete(confirmDelete.id)} className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white hover:bg-red-700">Delete</button>
-            </div>
           </div>
         </div>
       )}

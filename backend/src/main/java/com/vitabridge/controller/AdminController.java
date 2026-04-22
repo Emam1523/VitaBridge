@@ -59,12 +59,6 @@ public class AdminController {
         return ResponseEntity.ok(adminService.toggleUserStatus(userId));
     }
     
-    @DeleteMapping("/users/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable UUID userId) {
-        adminService.deleteUser(userId);
-        return ResponseEntity.noContent().build();
-    }
-    
     // Doctor Management
     
     @PostMapping("/doctors")

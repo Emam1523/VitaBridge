@@ -22,6 +22,7 @@ public class DoctorDTO {
     private List<EducationDTO> education;
     private Double consultationFee;
     private String imageUrl;
+    private String profileImageUrl;
     private String availability;
     private Double rating;
     private Integer totalReviews;

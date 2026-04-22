@@ -30,4 +30,5 @@ public class ScheduleDTO {
     private Integer maxPatients;
     private Integer bookedCount;
     private Boolean isActive;
+    private String consultationMode;
 }

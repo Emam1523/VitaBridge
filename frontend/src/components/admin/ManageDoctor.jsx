@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import DashboardLayout from "../common/DashboardLayout";
 import { useAuth } from "../../context/AuthenticationContext";
-import { getAllDoctors, createDoctor, toggleUserStatus, deleteUser } from "../../api/adminApi";
+import { getAllDoctors, createDoctor, toggleUserStatus } from "../../api/adminApi";
 import { ADMIN_LINKS } from "./adminLinks";
 
 export default function ManageDoctor() {
@@ -56,16 +56,6 @@ export default function ManageDoctor() {
       fetchDoctors();
     } catch (err) {
       setActionError("Failed to update status: " + err.message);
-    }
-  };
-
-  const handleDelete = async (userId, name) => {
-    if (!window.confirm(`Permanently delete Dr. ${name}? This will remove all their appointments, payments, and records. This cannot be undone.`)) return;
-    try {
-      await deleteUser(userId, token);
-      fetchDoctors();
-    } catch (err) {
-      setActionError("Failed to delete doctor: " + err.message);
     }
   };
 
@@ -162,6 +152,7 @@ export default function ManageDoctor() {
               <thead>
                 <tr className="border-b bg-gray-50">
                   <th className="px-6 py-3 font-medium text-gray-500">Doctor</th>
+                  <th className="px-6 py-3 font-medium text-gray-500">Phone</th>
                   <th className="px-6 py-3 font-medium text-gray-500">Specialty</th>
                   <th className="px-6 py-3 font-medium text-gray-500">Experience</th>
                   <th className="px-6 py-3 font-medium text-gray-500">Rating</th>
@@ -174,8 +165,12 @@ export default function ManageDoctor() {
                   <tr key={doc.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-sm">
-                          {(doc.name || "D")[0]}
+                        <div className="h-9 w-9 overflow-hidden rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-sm">
+                          {doc.profileImageUrl || doc.imageUrl ? (
+                            <img src={doc.profileImageUrl || doc.imageUrl} alt={doc.name} className="h-full w-full object-cover" />
+                          ) : (
+                            (doc.name || "D")[0]
+                          )}
                         </div>
                         <div>
                           <div className="font-medium text-gray-900">{doc.name}</div>
@@ -183,6 +178,7 @@ export default function ManageDoctor() {
                         </div>
                       </div>
                     </td>
+                    <td className="px-6 py-4 text-gray-700">{doc.phoneNumber || "—"}</td>
                     <td className="px-6 py-4 text-gray-700">{doc.specialty || "—"}</td>
                     <td className="px-6 py-4 text-gray-700">{doc.experience || 0} yrs</td>
                     <td className="px-6 py-4">
@@ -208,8 +204,6 @@ export default function ManageDoctor() {
                           className={`rounded px-2 py-1 text-xs font-medium ${doc.isActive === false ? "bg-green-50 text-green-700 hover:bg-green-100" : "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"}`}>
                           {doc.isActive === false ? "Activate" : "Deactivate"}
                         </button>
-                        <button onClick={() => handleDelete(doc.userId, doc.name)}
-                          className="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100">Delete</button>
                       </div>
                     </td>
                   </tr>

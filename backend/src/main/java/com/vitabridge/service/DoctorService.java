@@ -173,6 +173,7 @@ public class DoctorService {
                 : new ArrayList<>());
         dto.setConsultationFee(doctor.getConsultationFee());
         dto.setImageUrl(doctor.getImageUrl());
+        dto.setProfileImageUrl(doctor.getUser().getProfileImageUrl());
 
         // Available when any active schedule exists for today (before end time) or any future date.
         // Becomes Unavailable once today's schedule end time passes, or when stopped/deleted.

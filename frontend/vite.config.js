@@ -9,6 +9,12 @@ export default defineConfig({
   server: {
     host: true,  // expose on LAN so mobile on same WiFi can connect
     proxy: {
+      "/api2": {
+        target: "http://127.0.0.1:8011",
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api2/, "/api"),
+      },
       "/api": {
         target: "http://localhost:8080",
         changeOrigin: true,

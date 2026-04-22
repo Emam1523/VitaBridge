@@ -15,9 +15,11 @@ public class AppointmentDTO {
     private UUID id;
     private UUID patientId;
     private String patientName;
+    private String patientProfileImageUrl;
     private UUID doctorId;
     private UUID doctorUserId;
     private String doctorName;
+    private String doctorProfileImageUrl;
     private String specialty;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")

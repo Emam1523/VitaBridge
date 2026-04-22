@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import DashboardLayout from "../common/DashboardLayout";
 import { useAuth } from "../../context/AuthenticationContext";
-import { getMyAssistants, createAssistant, removeAssistant } from "../../api/doctorApi";
+import { getMyAssistants, createAssistant, removeAssistant, updateAssistantStatus } from "../../api/doctorApi";
 import { DOCTOR_LINKS } from "./DoctorDashboard";
 
 export default function AssistantManagement() {
@@ -48,6 +48,17 @@ export default function AssistantManagement() {
       fetchAssistants();
     } catch (err) {
       alert("Failed: " + err.message);
+    }
+  };
+
+  const handleToggleStatus = async (userId, nextActive) => {
+    const action = nextActive ? "activate" : "deactivate";
+    if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} this assistant?`)) return;
+    try {
+      await updateAssistantStatus(userId, nextActive, token);
+      fetchAssistants();
+    } catch (err) {
+      alert(`Failed to ${action} assistant: ${err.message}`);
     }
   };
 
@@ -122,8 +133,12 @@ export default function AssistantManagement() {
             <div key={ast.id} className="rounded-2xl bg-white p-5 shadow-sm">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">
-                    {(ast.name || "A")[0]}
+                  <div className="h-10 w-10 overflow-hidden rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold">
+                    {ast.profileImageUrl ? (
+                      <img src={ast.profileImageUrl} alt={ast.name || "Assistant"} className="h-full w-full object-cover" />
+                    ) : (
+                      <span>{(ast.name || "A")[0]}</span>
+                    )}
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">{ast.name}</h3>
@@ -148,10 +163,18 @@ export default function AssistantManagement() {
                   </div>
                 )}
               </div>
-              <button onClick={() => handleRemove(ast.userId)}
-                className="mt-4 w-full rounded-lg bg-red-50 py-2 text-sm font-medium text-red-700 hover:bg-red-100">
-                Remove Assistant
-              </button>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => handleToggleStatus(ast.userId, !ast.isActive)}
+                  className={`rounded-lg py-2 text-sm font-medium ${ast.isActive ? "bg-amber-50 text-amber-700 hover:bg-amber-100" : "bg-green-50 text-green-700 hover:bg-green-100"}`}
+                >
+                  {ast.isActive ? "Deactivate" : "Activate"}
+                </button>
+                <button onClick={() => handleRemove(ast.userId)}
+                  className="rounded-lg bg-red-50 py-2 text-sm font-medium text-red-700 hover:bg-red-100">
+                  Remove
+                </button>
+              </div>
             </div>
           ))}
         </div>

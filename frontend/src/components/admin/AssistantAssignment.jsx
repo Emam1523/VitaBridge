@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import DashboardLayout from "../common/DashboardLayout";
 import { useAuth } from "../../context/AuthenticationContext";
-import { getAllAssistantAssignments, getUnassignedAssistants, toggleUserStatus, deleteUser } from "../../api/adminApi";
+import { getAllAssistantAssignments, getUnassignedAssistants, toggleUserStatus } from "../../api/adminApi";
 import { ADMIN_LINKS } from "./adminLinks";
 
 export default function AssistantAssignments() {
@@ -54,17 +54,6 @@ export default function AssistantAssignments() {
       if (showUnassigned) fetchUnassigned();
     } catch (err) {
       setActionError("Failed to update status: " + err.message);
-    }
-  };
-
-  const handleDelete = async (userId, name) => {
-    if (!window.confirm(`Permanently delete assistant ${name}? This cannot be undone.`)) return;
-    try {
-      await deleteUser(userId, token);
-      fetchAssignments();
-      if (showUnassigned) fetchUnassigned();
-    } catch (err) {
-      setActionError("Failed to delete assistant: " + err.message);
     }
   };
 
@@ -134,10 +123,23 @@ export default function AssistantAssignments() {
                   key={asst.assistantId}
                   className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:bg-gray-50"
                 >
-                  <div>
-                    <div className="font-medium text-gray-900">{asst.assistantName}</div>
-                    <div className="text-sm text-gray-500">
-                      {asst.assistantEmail} • Employee ID: {asst.employeeId || "N/A"}
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 overflow-hidden rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-sm">
+                      {asst.assistantProfileImageUrl ? (
+                        <img
+                          src={asst.assistantProfileImageUrl}
+                          alt={asst.assistantName || "Assistant"}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span>{(asst.assistantName || "A")[0]}</span>
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{asst.assistantName}</div>
+                      <div className="text-sm text-gray-500">
+                        {asst.assistantEmail} • Employee ID: {asst.employeeId || "N/A"}
+                      </div>
                     </div>
                   </div>
                   <span className="rounded-full px-3 py-1 text-xs font-medium bg-yellow-50 text-yellow-700">
@@ -186,8 +188,16 @@ export default function AssistantAssignments() {
                   <tr key={asst.assistantId} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-sm">
-                          {(asst.assistantName || "A")[0]}
+                        <div className="h-9 w-9 overflow-hidden rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-sm">
+                          {asst.assistantProfileImageUrl ? (
+                            <img
+                              src={asst.assistantProfileImageUrl}
+                              alt={asst.assistantName || "Assistant"}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <span>{(asst.assistantName || "A")[0]}</span>
+                          )}
                         </div>
                         <div>
                           <div className="font-medium text-gray-900">{asst.assistantName}</div>
@@ -227,8 +237,6 @@ export default function AssistantAssignments() {
                           className={`rounded px-2 py-1 text-xs font-medium ${asst.isActive ? "bg-yellow-50 text-yellow-700 hover:bg-yellow-100" : "bg-green-50 text-green-700 hover:bg-green-100"}`}>
                           {asst.isActive ? "Deactivate" : "Activate"}
                         </button>
-                        <button onClick={() => handleDelete(asst.userId, asst.assistantName)}
-                          className="rounded bg-red-50 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-100">Delete</button>
                       </div>
                     </td>
                   </tr>
